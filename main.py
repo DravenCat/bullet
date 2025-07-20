@@ -102,48 +102,56 @@ def setup_camera_for_large_model(model_center, max_dim):
 
 
 def main():
-    # Connect to physical client and set the client params
+    # ------------------------------------------------------------------------
     physicsClient = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, -10)
+    p.setGravity(0, 0, -9.81)
+    p.setPhysicsEngineParameter(fixedTimeStep=1/240, numSolverIterations=50)
+    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+    # ------------------------------------------------------------------------
 
-    # Load the model
-    planeId = p.loadURDF("plane.urdf")
-
+    # 1) load ground and fish BEFORE touching boxId‑dependent stuff
+    p.loadURDF("plane.urdf")
     startPos = [0, 0, 1]
-    startOrientation = p.getQuaternionFromEuler([0, 0, 0])
-    boxId = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOrientation)
+    startOri = p.getQuaternionFromEuler([0, 0, 0])
+    boxId = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOri)
 
-    # stl_path = get_model_file("Biomimetic_Fish_v6")
-    # obj_id, model_center, model_size, max_dim= load_stl_model(stl_path)
-    # print(f"Model loaded successfully! ID: {obj_id}")
+    # 2) set linear / angular damping (simple “viscosity”)
+    p.changeDynamics(boxId, -1,
+                     linearDamping=5.0,
+                     angularDamping=2.0)
 
-    # Set the camera
-    # cam_pos, cam_target, far_plane = setup_camera_for_large_model(model_center, max_dim)
+    # 3) buoyancy helper now has a valid boxId to work with
+    EST_VOL   = 1.2e-3                       # m³  – rough
+    BUOYANCY  = 1000 * 9.81 * EST_VOL        # N   – ρ g V
+    def apply_buoyancy():
+        p.applyExternalForce(boxId, -1, [0, 0, BUOYANCY],
+                             [0, 0, 0], p.WORLD_FRAME)
 
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+    # 4) optional quadratic drag helper (from earlier message)
+    def apply_water_drag():
+        lin_vel, ang_vel = p.getBaseVelocity(boxId)
+        v = np.array(lin_vel);  w = np.array(ang_vel)
+        # translational drag
+        speed = np.linalg.norm(v)
+        if speed > 1e-6:
+            F = -0.5 * 1000 * 0.8 * 0.005 * speed * v
+            p.applyExternalForce(boxId, -1, F.tolist(), [0, 0, 0], p.WORLD_FRAME)
+        # rotational drag
+        rate = np.linalg.norm(w)
+        if rate > 1e-6:
+            T = -0.5 * 1000 * 0.04 * 1e-4 * rate * w
+            p.applyExternalTorque(boxId, -1, T.tolist(), p.WORLD_FRAME)
 
-    # Run simulation infinitely
-    # while True:
-    #     p.stepSimulation()
-    #     # p.setRealTimeSimulation(1)  # real time simulation
-
-    # Run simulation finitely
-    for i in range(1000):
-        time_step_length = 1 / 240
-        # p.setRealTimeSimulation(1)  # real time simulation
+    # 5) run the sim
+    for _ in range(100000):
+        apply_buoyancy()
+        apply_water_drag()          # optional
         p.stepSimulation()
-        p.setTimeStep(time_step_length)
-        time.sleep(time_step_length)
+        time.sleep(1/240)
 
-    # Get Position and Orientation
-    cubePos, cubeOrn = p.getBasePositionAndOrientation(boxId)
-    print("-" * 20)
-    print(f"Position:{cubePos}\nOrientation:{cubeOrn}")
-    print("-" * 20)
-
+    print("Final pose:", p.getBasePositionAndOrientation(boxId))
     p.disconnect()
 
 
