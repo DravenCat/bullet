@@ -4,6 +4,7 @@ import os
 import time
 import underwater
 
+
 def get_model_file(filename: str) -> str:
     """Get the stl model file name"""
     current_dir = os.path.dirname(os.path.abspath(__file__))
