@@ -107,10 +107,16 @@ def main():
     # Connect to physical client and set the client params
     physicsClient = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, 0)
+    p.setGravity(0, 0, -10)
     # p.setTimeStep(1 / 240)
 
     # Load the model
+    planeId = p.loadURDF("plane.urdf")
+
+    # startPos = [0, 0, 1]
+    # startOrientation = p.getQuaternionFromEuler([0, 0, 0])
+    # boxId = p.loadURDF("r2d2.urdf", startPos, startOrientation)
+
     stl_path = get_model_file("Biomimetic_Fish_v6")
     obj_id, model_center, model_size, max_dim= load_stl_model(stl_path)
     print(f"Model loaded successfully! ID: {obj_id}")
