@@ -67,9 +67,7 @@ def setup_camera_for_large_model(model_center, max_dim):
 
     # Set far plane
     far_plane = max_dim * 2
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
     p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 1)
     p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 1)
     p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 1)
@@ -108,14 +106,15 @@ def main():
     physicsClient = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
-
+    p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+
     # Load the model
     planeId = p.loadURDF("plane.urdf")
 
     startPos = [0, 0, 1]
     startOrientation = p.getQuaternionFromEuler([0, 0, 0])
-    boxId = p.loadURDF("r2d2.urdf", startPos, startOrientation)
+    boxId = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOrientation)
 
     # stl_path = get_model_file("Biomimetic_Fish_v6")
     # obj_id, model_center, model_size, max_dim= load_stl_model(stl_path)
@@ -129,11 +128,13 @@ def main():
     # Run simulation infinitely
     # while True:
     #     p.stepSimulation()
+    #     # p.setRealTimeSimulation(1)  # real time simulation
 
     # Run simulation finitely
     for i in range(1000):
-        p.stepSimulation()
         time_step_length = 1 / 240
+        # p.setRealTimeSimulation(1)  # real time simulation
+        p.stepSimulation()
         p.setTimeStep(time_step_length)
         time.sleep(time_step_length)
 
