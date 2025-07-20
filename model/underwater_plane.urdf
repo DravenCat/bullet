@@ -1,0 +1,30 @@
+<robot name="underwater_plane">
+  <link name="base_link">
+    <contact>
+      <lateral_friction value="0.1"/>  <!-- 减小摩擦 -->
+      <rolling_friction value="0.01"/> <!-- 水下滚动摩擦很小 -->
+      <spinning_friction value="0.005"/>
+      <restitution value="0.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0"/>  <!-- 静态环境 -->
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <plane size="100 100"/>
+      </geometry>
+      <material name="water">
+        <color rgba="0.1 0.3 0.8 0.6"/> <!-- 半透明蓝色 -->
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <plane size="100 100"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
