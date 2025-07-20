@@ -1,0 +1,73 @@
+<robot name="simple_fish">
+
+  <!-- ▸ BODY (parent link) -->
+  <link name="body">
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="2e-4" iyy="2e-4" izz="2e-4"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="meshes/Body_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="meshes/Body_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ▸ TAIL (hinged) -->
+  <link name="tail">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="5e-5" iyy="5e-5" izz="5e-5"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="meshes/RearFin_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="meshes/RearFin_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ▸ FRONT FIN (fixed) -->
+  <link name="front_fin">
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="2e-5" iyy="2e-5" izz="2e-5"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="meshes/FrontFin_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="meshes/FrontFin_Fish.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- revolute hinge: body ↔ tail -->
+  <joint name="tail_hinge" type="revolute">
+    <parent link="body"/>
+    <child  link="tail"/>
+    <origin xyz="0 -0.15 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.0" upper="1.0" effort="1.0" velocity="10.0"/>
+  </joint>
+
+  <!-- fixed joint: body ↔ front fin -->
+  <joint name="fin_pin" type="fixed">
+    <parent link="body"/>
+    <child  link="front_fin"/>
+    <origin xyz="0.05 0 -0.02" rpy="0 0 0"/>
+  </joint>
+
+</robot>

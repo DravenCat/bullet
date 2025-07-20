@@ -2,7 +2,7 @@ import pybullet as p
 import pybullet_data
 import os
 import numpy as np
-
+import time
 
 def get_model_file(filename: str) -> str:
     """Get the stl model file name"""
@@ -108,25 +108,42 @@ def main():
     physicsClient = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
-    # p.setTimeStep(1 / 240)
 
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     # Load the model
     planeId = p.loadURDF("plane.urdf")
 
-    # startPos = [0, 0, 1]
-    # startOrientation = p.getQuaternionFromEuler([0, 0, 0])
-    # boxId = p.loadURDF("r2d2.urdf", startPos, startOrientation)
+    startPos = [0, 0, 1]
+    startOrientation = p.getQuaternionFromEuler([0, 0, 0])
+    boxId = p.loadURDF("r2d2.urdf", startPos, startOrientation)
 
-    stl_path = get_model_file("Biomimetic_Fish_v6")
-    obj_id, model_center, model_size, max_dim= load_stl_model(stl_path)
-    print(f"Model loaded successfully! ID: {obj_id}")
+    # stl_path = get_model_file("Biomimetic_Fish_v6")
+    # obj_id, model_center, model_size, max_dim= load_stl_model(stl_path)
+    # print(f"Model loaded successfully! ID: {obj_id}")
 
     # Set the camera
-    cam_pos, cam_target, far_plane = setup_camera_for_large_model(model_center, max_dim)
+    # cam_pos, cam_target, far_plane = setup_camera_for_large_model(model_center, max_dim)
 
-    # Run simulation
-    while True:
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+
+    # Run simulation infinitely
+    # while True:
+    #     p.stepSimulation()
+
+    # Run simulation finitely
+    for i in range(1000):
         p.stepSimulation()
+        time_step_length = 1 / 240
+        p.setTimeStep(time_step_length)
+        time.sleep(time_step_length)
+
+    # Get Position and Orientation
+    cubePos, cubeOrn = p.getBasePositionAndOrientation(boxId)
+    print("-" * 20)
+    print(f"Position:{cubePos}\nOrientation:{cubeOrn}")
+    print("-" * 20)
+
+    p.disconnect()
 
 
 if __name__ == '__main__':
