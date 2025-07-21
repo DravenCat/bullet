@@ -61,6 +61,31 @@ def get_robot_overlapping(robot_id):
     return arr
 
 
+def ray_test(robot_id, rayNum, rayLength, useDebugLine=False,
+             missRayColor=[1, 0, 0], # Rad
+             hitRayColor=[0, 1, 0]  # Green
+             ):
+    # Get ray froms and rat tos
+    begins, _ = p.getBasePositionAndOrientation(robot_id)
+    rayFroms = [begins for _ in range(rayNum)]
+    rayTos = [
+        [
+            begins[0] + rayLength * math.cos(2 * math.pi * float(i) / rayNum),
+            begins[1] + rayLength * math.sin(2 * math.pi * float(i) / rayNum),
+            begins[2]
+        ] for i in range(rayNum)]
+    results = p.rayTestBatch(rayFroms, rayTos)
+
+    p.removeAllUserDebugItems()
+
+    if useDebugLine:
+        # Color the results
+        for index, result in enumerate(results):
+            if result[0] == -1:
+                p.addUserDebugLine(rayFroms[index], rayTos[index], missRayColor)
+            else:
+                p.addUserDebugLine(rayFroms[index], rayTos[index], hitRayColor)
+
 def main():
     # -------------Set up the physical engine -----------------------------------------
     physicsClient = setup_physical_engine(useGUI=True)
@@ -121,13 +146,6 @@ def main():
         force=10
     )
 
-    # Debug laser
-    useDebugLine = False
-    hitRayColor = [0, 1, 0]
-    missRayColor = [1, 0, 0]
-    rayLength = 15
-    rayNum = 16
-
     # Run 10 steps to ensure the initialization
     p.setRealTimeSimulation(0)  # Disable real time simulation
     for _ in range(10):
@@ -164,28 +182,12 @@ def main():
             force=10
         )
 
-        # Perform ray test
+        # Perform ray test and show with debug laser
         if step_i % 50 == 0:
-            # Get ray froms and rat tos
-            begins, _ = p.getBasePositionAndOrientation(robot_id)
-            rayFroms = [begins for _ in range(rayNum)]
-            rayTos = [
-                [
-                    begins[0] + rayLength * math.cos(2 * math.pi * float(i) / rayNum),
-                    begins[1] + rayLength * math.sin(2 * math.pi * float(i) / rayNum),
-                    begins[2]
-                ]for i in range(rayNum)]
-            results = p.rayTestBatch(rayFroms, rayTos)
-
-            p.removeAllUserDebugItems()
-
-            if useDebugLine:
-                # Color the results
-                for index, result in enumerate(results):
-                    if result[0] == -1:
-                        p.addUserDebugLine(rayFroms[index], rayTos[index], missRayColor)
-                    else:
-                        p.addUserDebugLine(rayFroms[index], rayTos[index], hitRayColor)
+            ray_test(robot_id=robot_id,
+                     rayNum=16,
+                     rayLength=10,
+                     useDebugLine=True,)  # Green
 
         # Check robot overlap and closet points
         if step_i % 100 == 0:
