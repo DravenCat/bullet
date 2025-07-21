@@ -1,6 +1,6 @@
 import pybullet as p
 import pybullet_data
-import os
+import math
 import time
 import underwater
 
@@ -64,7 +64,7 @@ def setup_camera_for_large_model(obj_id):
 
 
 def main():
-    # ------------------------------------------------------------------------
+    # -------------Set up the physical engine -----------------------------------------
     # Set up the physical engine
     physicsClient = p.connect(p.GUI)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -75,29 +75,98 @@ def main():
     p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)  # Disable CPU rendering
     # ------------------------------------------------------------------------
 
+    # --------------Load and render the model ------------------------------------------
     # Load ground and fish BEFORE touching boxId‑dependent stuff
     p.loadURDF("plane.urdf")
     startPos = [0, 0, 1]
     startOri = p.getQuaternionFromEuler([0, 0, 0])
-    box_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOri)
+    robot_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOri)
 
     # Set linear / angular damping (simple “viscosity”)
-    p.changeDynamics(box_id, -1,
+    p.changeDynamics(robot_id, -1,
                      linearDamping=5.0,
                      angularDamping=2.0)
 
     # Set underwater environment
-    underwater.apply_buoyancy(p, box_id)
-    underwater.apply_water_drag(p, box_id)  # optional
+    underwater.apply_buoyancy(p, robot_id)
+    underwater.apply_water_drag(p, robot_id)  # optional
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
+    # ------------------------------------------------------------------------
 
+    # --------------- Initialization ---------------------------------------------
+    # Get all the joints id
+    available_joints_indexes = [i for i in range(p.getNumJoints(robot_id)) if
+                                p.getJointInfo(robot_id, i)[2] != p.JOINT_FIXED]
+    rear_fin_id = available_joints_indexes[0]
+    front_fin_id = available_joints_indexes[1]
+
+    p.setRealTimeSimulation(0)  # Disable real time simulation
+
+    max_rear_radius = 0.5236  # radius limit for the rear fin (30 * π/180)
+    max_front_radius = 0.2618 # radius limit for the front fin (15 * π/180)
+    period_steps_rear = 100
+    period_steps_front = 1000
+    step_counter = 0
+
+    # Initialize rear fin position
+    p.setJointMotorControl2(
+        bodyUniqueId=robot_id,
+        jointIndex=rear_fin_id,
+        controlMode=p.POSITION_CONTROL,
+        targetPosition=0,
+        positionGain=1.0,
+        force=10
+    )
+
+    # Initialize front fin position
+    p.setJointMotorControl2(
+        bodyUniqueId=robot_id,
+        jointIndex=front_fin_id,
+        controlMode=p.POSITION_CONTROL,
+        targetPosition=0,
+        positionGain=1.0,
+        force=10
+    )
+
+    # Run 10 steps to ensure the initialization
+    for _ in range(10):
+        p.stepSimulation()
+        time.sleep(1 / 240)
+    # ------------------------------------------------------------------------
+
+    # --------------- Simulation ---------------------------------------------
     # Run the simulation
     for _ in range(10000):
         p.stepSimulation()
-        time.sleep(1/240)
 
-    print("Final pose:", p.getBasePositionAndOrientation(box_id))
+        # Rear fin control
+        angle_rear = max_rear_radius * math.sin(2 * math.pi * step_counter / period_steps_rear)
+        p.setJointMotorControl2(
+            bodyUniqueId=robot_id,
+            jointIndex=rear_fin_id,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=angle_rear,
+            positionGain=1.0,
+            force=10
+        )
+
+        # Front fin control
+        angle_front = max_front_radius * math.sin(2 * math.pi * step_counter / period_steps_front)
+        p.setJointMotorControl2(
+            bodyUniqueId=robot_id,
+            jointIndex=front_fin_id,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=angle_front,
+            positionGain=1.0,
+            force=10
+        )
+
+        step_counter += 1
+        time.sleep(1/240)
+    # -------------------------------------------------------------------------
+
+    print("Final pose:", p.getBasePositionAndOrientation(robot_id))
     p.disconnect()
 
 
