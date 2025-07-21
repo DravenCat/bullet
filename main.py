@@ -188,7 +188,7 @@ def main():
             ray_test(robot_id=robot_id,
                      rayNum=16,
                      rayLength=10,
-                     useDebugLine=True,)  # Green
+                     useDebugLine=True)  # Green
 
         # Check robot overlap and closet points
         if step_i % 100 == 0:
