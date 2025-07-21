@@ -4,6 +4,8 @@ import math
 import time
 import underwater
 import test_object
+import debug_params
+import collision_test
 
 
 def setup_physical_engine(useGUI):
@@ -46,47 +48,6 @@ def camera_follow(robot_id):
     )
 
 
-def get_robot_overlapping(robot_id):
-    """Return the object id that the robot is overlapping"""
-    arr = []
-    P_min, P_max = p.getAABB(robot_id)
-    id_tuples = p.getOverlappingObjects(P_min, P_max)
-    if len(id_tuples) > 1:
-        for ID, _ in id_tuples:
-            if ID == robot_id:
-                continue
-            else:
-                # print(f"hit happen! hit object is {p.getBodyInfo(ID)}")
-                arr.append(ID)
-    return arr
-
-
-def ray_test(robot_id, rayNum, rayLength, useDebugLine=False,
-             missRayColor=[1, 0, 0], # Rad
-             hitRayColor=[0, 1, 0]  # Green
-             ):
-    # Get ray froms and rat tos
-    begins, _ = p.getBasePositionAndOrientation(robot_id)
-    rayFroms = [begins for _ in range(rayNum)]
-    rayTos = [
-        [
-            begins[0] + rayLength * math.cos(2 * math.pi * float(i) / rayNum),
-            begins[1] + rayLength * math.sin(2 * math.pi * float(i) / rayNum),
-            begins[2]
-        ] for i in range(rayNum)]
-    results = p.rayTestBatch(rayFroms, rayTos)
-
-    p.removeAllUserDebugItems()
-
-    if useDebugLine:
-        # Color the results
-        for index, result in enumerate(results):
-            if result[0] == -1:
-                p.addUserDebugLine(rayFroms[index], rayTos[index], missRayColor)
-            else:
-                p.addUserDebugLine(rayFroms[index], rayTos[index], hitRayColor)
-
-
 def main():
     # -------------Set up the physical engine -----------------------------------------
     physicsClient = setup_physical_engine(useGUI=True)
@@ -110,8 +71,6 @@ def main():
     # Set underwater environment
     underwater.apply_buoyancy(p, robot_id)
     underwater.apply_water_drag(p, robot_id)  # optional
-
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
     # ------------------------------------------------------------------------
 
     # --------------- Initialization ---------------------------------------------
@@ -147,6 +106,15 @@ def main():
         force=10
     )
 
+    # Add reset button
+    btn = p.addUserDebugParameter(
+        paramName="reset",
+        rangeMin=1,
+        rangeMax=0,
+        startValue=0
+    )
+    previous_btn_value = p.readUserDebugParameter(btn)
+
     # Run 10 steps to ensure the initialization
     p.setRealTimeSimulation(0)  # Disable real time simulation
     for _ in range(10):
@@ -155,6 +123,7 @@ def main():
     # ------------------------------------------------------------------------
 
     # --------------- Simulation ---------------------------------------------
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     # Run the simulation
@@ -185,15 +154,15 @@ def main():
 
         # Perform ray test and show with debug laser
         if step_i % 50 == 0:
-            ray_test(robot_id=robot_id,
+            collision_test.ray_test(robot_id=robot_id, p=p,
                      rayNum=16,
                      rayLength=10,
-                     useDebugLine=True)  # Green
+                     useDebugLine=False)
 
         # Check robot overlap and closet points
         if step_i % 100 == 0:
 
-            # arr_overlap = get_robot_overlapping(robot_id)
+            # arr_overlap = collision_test.get_robot_overlapping(robot_id, p)
             arr_closet = p.getClosestPoints(
                 bodyA=robot_id,
                 bodyB=plane,
@@ -202,6 +171,10 @@ def main():
 
         # Camera control
         # camera_follow(robot_id)
+
+        # Click the reset button
+        if p.readUserDebugParameter(btn) != previous_btn_value:
+            previous_btn_value = debug_params.reset_env(btn, p, robot_id)
 
         step_counter += 1
         time.sleep(1 / 240)
