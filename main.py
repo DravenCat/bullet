@@ -16,62 +16,30 @@ def setup_physical_engine(connection_mode):
     return physicsClient
 
 
-def setup_camera_for_large_model(obj_id):
-    """Set the camera position and size"""
+def camera_follow(robot_id):
+    """Enable camera to follow the robot"""
+    # aabb_min, aabb_max = p.getAABB(robot_id)
+    # model_center = [(aabb_min[i] + aabb_max[i]) / 2 for i in range(3)]
+    # model_size = [aabb_max[i] - aabb_min[i] for i in range(3)]
+    # max_dim = max(model_size)
+    #
+    # camera_distance = max_dim * 1
+    #
+    # camera_position = [
+    #     model_center[0],
+    #     model_center[1] - camera_distance,
+    #     model_center[2] + max_dim * 0.5
+    # ]
 
-    aabb_min, aabb_max = p.getAABB(obj_id)
-    model_center = [(aabb_min[i] + aabb_max[i]) / 2 for i in range(3)]
-    model_size = [aabb_max[i] - aabb_min[i] for i in range(3)]
-    max_dim = max(model_size)
-
-    camera_distance = max_dim * 1
-
-    camera_position = [
-        model_center[0],
-        model_center[1] - camera_distance,
-        model_center[2] + max_dim * 0.5
-    ]
-
-    camera_target = model_center
+    camera_target, _ = p.getBasePositionAndOrientation(robot_id)
 
     # Set Camera params
     p.resetDebugVisualizerCamera(
-        cameraDistance=camera_distance,
+        cameraDistance=1.5,
         cameraYaw=45,
         cameraPitch=-30,
         cameraTargetPosition=camera_target
     )
-
-    # Set far plane
-    far_plane = max_dim * 2
-
-    # Set project matrix
-    projection_matrix = p.computeProjectionMatrixFOV(
-        fov=60,
-        aspect=1.0,
-        nearVal=0.1,
-        farVal=far_plane
-    )
-
-    # Set view matrix
-    view_matrix = p.computeViewMatrixFromYawPitchRoll(
-        cameraTargetPosition=camera_target,
-        distance=camera_distance,
-        yaw=45,
-        pitch=-30,
-        roll=0,
-        upAxisIndex=2
-    )
-
-    # Get camera image
-    width, height, rgbImg, depthImg, segImg = p.getCameraImage(
-        width=1920,
-        height=1080,
-        viewMatrix=view_matrix,
-        projectionMatrix=projection_matrix
-    )
-
-    return camera_position, camera_target, far_plane
 
 
 def main():
@@ -142,8 +110,10 @@ def main():
     # ------------------------------------------------------------------------
 
     # --------------- Simulation ---------------------------------------------
+    # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
+
     # Run the simulation
-    for _ in range(10000):
+    for _ in range(2000):
         p.stepSimulation()
 
         # Rear fin control
@@ -168,8 +138,12 @@ def main():
             force=10
         )
 
+        # camera_follow(robot_id)
+
         step_counter += 1
         time.sleep(1/240)
+
+    # p.stopStateLogging(log_id)  # Stop recording
     # -------------------------------------------------------------------------
 
     print("Final pose:", p.getBasePositionAndOrientation(robot_id))
