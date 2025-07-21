@@ -3,6 +3,7 @@ import pybullet_data
 import math
 import time
 import underwater
+import test_object
 
 
 def setup_physical_engine(useGUI):
@@ -70,9 +71,10 @@ def main():
 
     # Load ground and fish BEFORE touching boxId‑dependent stuff
     plane = p.loadURDF("plane.urdf")
-    startPos = [0, 0, 1]
-    startOri = p.getQuaternionFromEuler([0, 0, 0])
-    robot_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOri)
+    robot_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf",
+                          basePosition=[0, 0, 1],
+                          baseOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+    test_wall = test_object.create_test_wall(p)
 
     # Set linear / angular damping (simple “viscosity”)
     p.changeDynamics(robot_id, -1,
@@ -92,8 +94,6 @@ def main():
                                 p.getJointInfo(robot_id, i)[2] != p.JOINT_FIXED]
     rear_fin_id = available_joints_indexes[0]
     front_fin_id = available_joints_indexes[1]
-
-    p.setRealTimeSimulation(0)  # Disable real time simulation
 
     max_rear_radius = 0.5236  # radius limit for the rear fin (30 * π/180)
     max_front_radius = 0.2618 # radius limit for the front fin (15 * π/180)
@@ -121,7 +121,15 @@ def main():
         force=10
     )
 
+    # Debug laser
+    useDebugLine = False
+    hitRayColor = [0, 1, 0]
+    missRayColor = [1, 0, 0]
+    rayLength = 15
+    rayNum = 16
+
     # Run 10 steps to ensure the initialization
+    p.setRealTimeSimulation(0)  # Disable real time simulation
     for _ in range(10):
         p.stepSimulation()
         time.sleep(1 / 240)
@@ -156,10 +164,32 @@ def main():
             force=10
         )
 
-        # camera_follow(robot_id)
+        # Perform ray test
+        if step_i % 50 == 0:
+            # Get ray froms and rat tos
+            begins, _ = p.getBasePositionAndOrientation(robot_id)
+            rayFroms = [begins for _ in range(rayNum)]
+            rayTos = [
+                [
+                    begins[0] + rayLength * math.cos(2 * math.pi * float(i) / rayNum),
+                    begins[1] + rayLength * math.sin(2 * math.pi * float(i) / rayNum),
+                    begins[2]
+                ]for i in range(rayNum)]
+            results = p.rayTestBatch(rayFroms, rayTos)
+
+            p.removeAllUserDebugItems()
+
+            if useDebugLine:
+                # Color the results
+                for index, result in enumerate(results):
+                    if result[0] == -1:
+                        p.addUserDebugLine(rayFroms[index], rayTos[index], missRayColor)
+                    else:
+                        p.addUserDebugLine(rayFroms[index], rayTos[index], hitRayColor)
 
         # Check robot overlap and closet points
         if step_i % 100 == 0:
+
             # arr_overlap = get_robot_overlapping(robot_id)
             arr_closet = p.getClosestPoints(
                 bodyA=robot_id,
@@ -167,8 +197,11 @@ def main():
                 distance=0.15)
             print(len(arr_closet) > 0)
 
+        # Camera control
+        # camera_follow(robot_id)
+
         step_counter += 1
-        time.sleep(1/240)
+        time.sleep(1 / 240)
 
     # p.stopStateLogging(log_id)  # Stop recording
     # -------------------------------------------------------------------------
