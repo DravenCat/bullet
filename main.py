@@ -86,6 +86,7 @@ def ray_test(robot_id, rayNum, rayLength, useDebugLine=False,
             else:
                 p.addUserDebugLine(rayFroms[index], rayTos[index], hitRayColor)
 
+
 def main():
     # -------------Set up the physical engine -----------------------------------------
     physicsClient = setup_physical_engine(useGUI=True)
