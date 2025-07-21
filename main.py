@@ -5,6 +5,17 @@ import time
 import underwater
 
 
+def setup_physical_engine(connection_mode):
+    """Set up and return a new physical engine"""
+    physicsClient = p.connect(connection_mode)
+    p.setAdditionalSearchPath(pybullet_data.getDataPath())
+    p.setGravity(0, 0, -10)  # 10 for easy calculation
+    p.setPhysicsEngineParameter(fixedTimeStep=1 / 240, numSolverIterations=50)
+    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)  # GUI for debug mode
+    p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)  # Disable CPU rendering
+    return physicsClient
+
+
 def setup_camera_for_large_model(obj_id):
     """Set the camera position and size"""
 
@@ -65,19 +76,14 @@ def setup_camera_for_large_model(obj_id):
 
 def main():
     # -------------Set up the physical engine -----------------------------------------
-    # Set up the physical engine
-    physicsClient = p.connect(p.GUI)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, -10)  # 10 for easy calculation
-    p.setPhysicsEngineParameter(fixedTimeStep=1/240, numSolverIterations=50)
-    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)  # GUI for debug mode
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)  # Disable rendering before all the models being loaded
-    p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)  # Disable CPU rendering
+    physicsClient = setup_physical_engine(p.GUI)
     # ------------------------------------------------------------------------
 
     # --------------Load and render the model ------------------------------------------
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)  # Disable rendering before all the models being loaded
+
     # Load ground and fish BEFORE touching boxId‑dependent stuff
-    p.loadURDF("plane.urdf")
+    plane = p.loadURDF("plane.urdf")
     startPos = [0, 0, 1]
     startOri = p.getQuaternionFromEuler([0, 0, 0])
     robot_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf", startPos, startOri)
