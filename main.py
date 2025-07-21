@@ -5,9 +5,12 @@ import time
 import underwater
 
 
-def setup_physical_engine(connection_mode):
+def setup_physical_engine(useGUI):
     """Set up and return a new physical engine"""
-    physicsClient = p.connect(connection_mode)
+    if useGUI:
+        physicsClient = p.connect(p.GUI)
+    else:
+        physicsClient = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)  # 10 for easy calculation
     p.setPhysicsEngineParameter(fixedTimeStep=1 / 240, numSolverIterations=50)
@@ -42,9 +45,24 @@ def camera_follow(robot_id):
     )
 
 
+def get_robot_overlapping(robot_id):
+    """Return the object id that the robot is overlapping"""
+    arr = []
+    P_min, P_max = p.getAABB(robot_id)
+    id_tuples = p.getOverlappingObjects(P_min, P_max)
+    if len(id_tuples) > 1:
+        for ID, _ in id_tuples:
+            if ID == robot_id:
+                continue
+            else:
+                # print(f"hit happen! hit object is {p.getBodyInfo(ID)}")
+                arr.append(ID)
+    return arr
+
+
 def main():
     # -------------Set up the physical engine -----------------------------------------
-    physicsClient = setup_physical_engine(p.GUI)
+    physicsClient = setup_physical_engine(useGUI=True)
     # ------------------------------------------------------------------------
 
     # --------------Load and render the model ------------------------------------------
@@ -113,7 +131,7 @@ def main():
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     # Run the simulation
-    for _ in range(2000):
+    for step_i in range(2000):
         p.stepSimulation()
 
         # Rear fin control
@@ -139,6 +157,15 @@ def main():
         )
 
         # camera_follow(robot_id)
+
+        # Check robot overlap and closet points
+        if step_i % 100 == 0:
+            # arr_overlap = get_robot_overlapping(robot_id)
+            arr_closet = p.getClosestPoints(
+                bodyA=robot_id,
+                bodyB=plane,
+                distance=0.15)
+            print(len(arr_closet) > 0)
 
         step_counter += 1
         time.sleep(1/240)
