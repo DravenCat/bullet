@@ -5,49 +5,14 @@ import time
 import underwater
 
 
-def get_model_file(filename: str) -> str:
-    """Get the stl model file name"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    stl_path = os.path.join(current_dir, "model/" + filename + ".stl")
-    return stl_path
-
-
-def load_stl_model(stl_path: str):
-    """Load the stl model. Return the model id, center, size and dimension"""
-    # create collision shape
-    collision_shape = p.createCollisionShape(
-        shapeType=p.GEOM_MESH,
-        fileName=stl_path,
-        meshScale=[1, 1, 1]  # scaling
-    )
-
-    # create visual shape
-    visual_shape = p.createVisualShape(
-        shapeType=p.GEOM_MESH,
-        fileName=stl_path,
-        meshScale=[1, 1, 1],
-        # rgbaColor=[0.7, 0.7, 0.9, 1]
-    )
-
-    # create object
-    obj_id = p.createMultiBody(
-        baseMass=1,
-        baseCollisionShapeIndex=collision_shape,
-        baseVisualShapeIndex=visual_shape,
-        basePosition=[0, 0, 0],
-        # baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
-    )
+def setup_camera_for_large_model(obj_id):
+    """Set the camera position and size"""
 
     aabb_min, aabb_max = p.getAABB(obj_id)
     model_center = [(aabb_min[i] + aabb_max[i]) / 2 for i in range(3)]
     model_size = [aabb_max[i] - aabb_min[i] for i in range(3)]
     max_dim = max(model_size)
 
-    return obj_id, model_center, model_size, max_dim
-
-
-def setup_camera_for_large_model(model_center, max_dim):
-    """Set the camera position and size"""
     camera_distance = max_dim * 1
 
     camera_position = [
@@ -68,10 +33,6 @@ def setup_camera_for_large_model(model_center, max_dim):
 
     # Set far plane
     far_plane = max_dim * 2
-    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 1)
 
     # Set project matrix
     projection_matrix = p.computeProjectionMatrixFOV(
