@@ -69,10 +69,6 @@ def main():
                      linearDamping=7.0,
                      angularDamping=4.0)
 
-    # Set underwater environment
-    underwater.apply_buoyancy(p, robot_id)
-    underwater.apply_water_drag(p, robot_id)  # optional
-
 
     # ------------------------------------------------------------------------
 
@@ -139,9 +135,15 @@ def main():
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
+    p.resetBasePositionAndOrientation(robot_id, [0, 0, 1], p.getQuaternionFromEuler([0, 0, 0]))
+
     # Run the simulation
     for step_i in range(10000):
         p.stepSimulation()
+
+        # Set underwater environment
+        underwater.apply_buoyancy(p, robot_id)
+        # underwater.apply_water_drag(p, robot_id)  # optional
 
         # Rear fin control
         angle_rear = max_rear_radius * math.sin(2 * math.pi * step_counter / period_steps_rear)
@@ -157,7 +159,7 @@ def main():
         underwater.apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
 
         # Left fin control
-        angle_left = 0.083  # 0.07-0.09
+        angle_left = 0.15
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=left_fin_id,
@@ -169,7 +171,7 @@ def main():
         left_lift = underwater.apply_fin_lift(p, robot_id, left_fin_id)
 
         # Right fin control
-        angle_right = 0.083  # 0.07-0.09
+        angle_right = 0.15
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=right_fin_id,

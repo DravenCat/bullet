@@ -16,7 +16,7 @@ def get_buoyancy_force(p, body_id):
 
     # 计算浮力 (ρ_water * g * V_displaced)
     # 假设鱼体密度接近水密度，浮力≈重力
-    buoyancy = -mass * gravity * 0.5  # 1.0表示中性浮力
+    buoyancy = -mass * gravity * 2.3  # 1.0表示中性浮力
 
     return buoyancy
 
@@ -24,8 +24,9 @@ def get_buoyancy_force(p, body_id):
 def apply_buoyancy(p, box_id):
     """ Buoyancy helper now has a valid boxId to work with"""
     buoyancy = get_buoyancy_force(p, box_id)
-    p.applyExternalForce(box_id, -1, [0, 0, BUOYANCY],
-                         [0, 0, 0], p.WORLD_FRAME)
+    com_pos, _ = p.getBasePositionAndOrientation(box_id)
+    p.applyExternalForce(box_id, -1, [0, 0, buoyancy],
+                         com_pos, p.WORLD_FRAME)
     return buoyancy
 
 
@@ -81,7 +82,7 @@ def apply_fin_lift(p, body_id, joint_id,
                    fin_len=0.04,  # 鳍的长度 (m)
                    chord=0.025,  # 鳍的弦长 (m)
                    rho=1000,  # 水的密度 (kg/m³)
-                   C_L_base=800,  # 基础升力系数
+                   C_L_base=400,  # 基础升力系数
                    max_angle=0.2618):  # 最大攻角 (15度≈0.2618弧度)
     """
     为胸鳍(左鳍/右鳍)提供升力（忽略关节角速度）
