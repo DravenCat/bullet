@@ -140,7 +140,7 @@ def main():
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     # Run the simulation
-    for step_i in range(2000):
+    for step_i in range(10000):
         p.stepSimulation()
 
         # Rear fin control
@@ -157,7 +157,7 @@ def main():
         underwater.apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
 
         # Left fin control
-        angle_left = 0.1
+        angle_left = 0.05
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=left_fin_id,
@@ -169,7 +169,7 @@ def main():
         left_lift = underwater.apply_fin_lift(p, robot_id, left_fin_id)
 
         # Right fin control
-        angle_right = 0.1
+        angle_right = 0.05
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=right_fin_id,
@@ -205,7 +205,7 @@ def main():
         #     f"左鳍升力: {left_lift:.4f}N | 右鳍升力: {right_lift:.4f}N")
 
         # Camera control
-        # camera_follow(robot_id)
+        camera_follow(robot_id)
 
         # Click the reset button
         if p.readUserDebugParameter(btn) != previous_btn_value:

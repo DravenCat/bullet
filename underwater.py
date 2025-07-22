@@ -70,7 +70,7 @@ def apply_tail_thrust(p, body_id, joint_id,
 
     thrust_vector = thrust * forward_vector
 
-    p.applyExternalForce(body_id, joint_id,
+    p.applyExternalForce(body_id, -1,
                          thrust_vector.tolist(),  # world‑space force
                          tail_pos,  # at COM
                          p.WORLD_FRAME)
