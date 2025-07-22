@@ -157,7 +157,7 @@ def main():
         underwater.apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
 
         # Left fin control
-        angle_left = 0.05
+        angle_left = 0.083  # 0.07-0.09
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=left_fin_id,
@@ -169,7 +169,7 @@ def main():
         left_lift = underwater.apply_fin_lift(p, robot_id, left_fin_id)
 
         # Right fin control
-        angle_right = 0.05
+        angle_right = 0.083  # 0.07-0.09
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=right_fin_id,

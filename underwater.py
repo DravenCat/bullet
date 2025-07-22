@@ -16,7 +16,7 @@ def get_buoyancy_force(p, body_id):
 
     # 计算浮力 (ρ_water * g * V_displaced)
     # 假设鱼体密度接近水密度，浮力≈重力
-    buoyancy = -mass * gravity * 1.0  # 1.0表示中性浮力
+    buoyancy = -mass * gravity * 0.5  # 1.0表示中性浮力
 
     return buoyancy
 
