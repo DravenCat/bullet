@@ -80,10 +80,10 @@ def main():
 
     # Load ground and fish BEFORE touching boxId‑dependent stuff
     plane = p.loadURDF("plane.urdf")
-    robot_id = p.loadURDF("model/Biomimetic_Fish_v7.urdf",
+    robot_id = p.loadURDF("model/Biomimetic_Fish_v8.urdf",
                           basePosition=[0, 0, 1],
                           baseOrientation=p.getQuaternionFromEuler([0, 0, 0]))
-    test_wall = test_object.create_test_wall(p)
+    # test_wall = test_object.create_test_wall(p)
 
     # Set linear / angular damping (simple “viscosity”)
     p.changeDynamics(robot_id, -1,
@@ -102,7 +102,8 @@ def main():
     available_joints_indexes = [i for i in range(p.getNumJoints(robot_id)) if
                                 p.getJointInfo(robot_id, i)[2] != p.JOINT_FIXED]
     rear_fin_id = available_joints_indexes[0]
-    front_fin_id = available_joints_indexes[1]
+    left_fin_id = available_joints_indexes[1]
+    right_fin_id = available_joints_indexes[2]
 
     max_rear_radius = 0.5236  # radius limit for the rear fin (30 * π/180)
     max_front_radius = 0.2618 # radius limit for the front fin (15 * π/180)
@@ -120,10 +121,20 @@ def main():
         force=10
     )
 
-    # Initialize front fin position
+    # Initialize left fin position
     p.setJointMotorControl2(
         bodyUniqueId=robot_id,
-        jointIndex=front_fin_id,
+        jointIndex=left_fin_id,
+        controlMode=p.POSITION_CONTROL,
+        targetPosition=0,
+        positionGain=1.0,
+        force=10
+    )
+
+    # Initialize right fin position
+    p.setJointMotorControl2(
+        bodyUniqueId=robot_id,
+        jointIndex=right_fin_id,
         controlMode=p.POSITION_CONTROL,
         targetPosition=0,
         positionGain=1.0,
@@ -151,7 +162,7 @@ def main():
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     # Run the simulation
-    for step_i in range(2000):
+    for step_i in range(10000):
         p.stepSimulation()
 
         # Rear fin control
@@ -165,34 +176,46 @@ def main():
             force=10
         )
         # >>> call the thrust helper right here <<<
-        apply_tail_thrust(p, robot_id, rear_fin_id)
-        
-        angle_front = max_front_radius * math.sin(2 * math.pi * step_counter / period_steps_front)
+        apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
+
+        # Left fin control
+        angle_left = max_front_radius * math.sin(2 * math.pi * step_counter / period_steps_front)
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
-            jointIndex=front_fin_id,
+            jointIndex=left_fin_id,
             controlMode=p.POSITION_CONTROL,
-            targetPosition=angle_front,
+            targetPosition=angle_left,
+            positionGain=1.0,
+            force=10
+        )
+
+        # Right fin control
+        angle_right = max_front_radius * math.cos(2 * math.pi * step_counter / period_steps_front)
+        p.setJointMotorControl2(
+            bodyUniqueId=robot_id,
+            jointIndex=right_fin_id,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=angle_right,
             positionGain=1.0,
             force=10
         )
 
         # Perform ray test and show with debug laser
-        if step_i % 50 == 0:
-            collision_test.ray_test(robot_id=robot_id, p=p,
-                     rayNum=16,
-                     rayLength=10,
-                     useDebugLine=False)
-
-        # Check robot overlap and closet points
-        if step_i % 100 == 0:
-
-            # arr_overlap = collision_test.get_robot_overlapping(robot_id, p)
-            arr_closet = p.getClosestPoints(
-                bodyA=robot_id,
-                bodyB=plane,
-                distance=0.15)
-            print(len(arr_closet) > 0)
+        # if step_i % 50 == 0:
+        #     collision_test.ray_test(robot_id=robot_id, p=p,
+        #              rayNum=16,
+        #              rayLength=10,
+        #              useDebugLine=False)
+        #
+        # # Check robot overlap and closet points
+        # if step_i % 100 == 0:
+        #
+        #     # arr_overlap = collision_test.get_robot_overlapping(robot_id, p)
+        #     arr_closet = p.getClosestPoints(
+        #         bodyA=robot_id,
+        #         bodyB=plane,
+        #         distance=0.15)
+        #     print(len(arr_closet) > 0)
 
         # Camera control
         # camera_follow(robot_id)

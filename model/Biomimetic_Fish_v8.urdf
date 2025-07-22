@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="Biomimetic">
+    <link name="Rear-Fin">
+        <inertial>
+            <origin xyz="0.00027484232876314965 1.667656435433429e-07 0.015001340935642522" rpy="0.0 -0.0 0.0" />
+            <mass value="0.0009810419371682414" />
+            <inertia ixx="6.381203867330296e-08" iyy="6.387757634909987e-08" izz="6.674473572878365e-10" ixy="-5.627546022190751e-12" iyz="2.698986613699847e-12" ixz="-3.075078312341319e-11" />
+        </inertial>
+        <visual name="Rear-Fin_visual">
+            <origin xyz="-0.1685 -0.025000000745058062 0.030000013515570533" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/Rear-Fin.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="Rear-Fin_collision">
+            <origin xyz="-0.1685 -0.025000000745058062 0.030000013515570533" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/Rear-Fin.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="Body">
+        <inertial>
+            <origin xyz="0.013459196472192202 0.025000009593440047 -0.004835075808883665" rpy="0.0 0.0 0.0" />
+            <mass value="5.0792171674360125" />
+            <inertia ixx="0.00411399632785542" iyy="0.024616479993953312" izz="0.021191256368660247" ixy="-2.2659308847663984e-10" iyz="-2.998658873293314e-11" ixz="0.0002704678775184273" />
+        </inertial>
+        <visual name="Body_visual">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/Body.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="Body_collision">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/Body.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="LeftFin_Fish">
+        <inertial>
+            <origin xyz="0.006823548053191058 0.00013369648074894642 -0.03665847544533363" rpy="0.0 -0.0 0.0" />
+            <mass value="0.024267427140330238" />
+            <inertia ixx="1.3616359834514143e-06" iyy="3.3058698320572906e-06" izz="2.16676383696618e-06" ixy="1.4180128407756836e-09" iyz="9.427745932779765e-09" ixz="6.7729289353157e-07" />
+        </inertial>
+        <visual name="LeftFin_Fish_visual">
+            <origin xyz="0.001 0.0 -0.04292037" rpy="1.5707963267948966 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/LeftFin_Fish.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="LeftFin_Fish_collision">
+            <origin xyz="0.001 0.0 -0.04292037" rpy="1.5707963267948966 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/LeftFin_Fish.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="RightFin_fish">
+        <inertial>
+            <origin xyz="0.006842432279657878 0.0001427224146460633 0.036792827558253964" rpy="0.0 -0.0 0.0" />
+            <mass value="0.024440091938355078" />
+            <inertia ixx="1.3881346461843194e-06" iyy="3.3590959934531287e-06" izz="2.195215300487522e-06" ixy="-1.2170742152169192e-08" iyz="-1.0626622038161572e-08" ixz="-6.899205534121132e-07" />
+        </inertial>
+        <visual name="RightFin_fish_visual">
+            <origin xyz="0.001 0.0 -0.00707888" rpy="1.5707963267948966 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/RightFin_fish.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="RightFin_fish_collision">
+            <origin xyz="0.001 0.0 -0.00707888" rpy="1.5707963267948966 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/RightFin_fish.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="Body_Revolute-1" type="revolute">
+        <origin xyz="0.1685 0.025 4.2000000000000004e-06" rpy="3.141592653589793 -0.0 0.0" />
+        <parent link="Body" />
+        <child link="Rear-Fin" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit lower="-0.523599" upper="0.523599" effort="1000000" velocity="1000000" />
+    </joint>
+    <joint name="Body_Revolute-6" type="revolute">
+        <origin xyz="-0.001 0.04292037 0.0" rpy="-1.5707963267948966 -0.0 0.0" />
+        <parent link="Body" />
+        <child link="LeftFin_Fish" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit lower="-0.174533" upper="0.392699" effort="1000000" velocity="1000000" />
+    </joint>
+    <joint name="Body_Revolute-7" type="revolute">
+        <origin xyz="-0.001 0.00707888 0.0" rpy="-1.5707963267948966 -0.0 0.0" />
+        <parent link="Body" />
+        <child link="RightFin_fish" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit lower="-0.174533" upper="0.392699" effort="1000000" velocity="1000000" />
+    </joint>
+</robot>
