@@ -2,6 +2,7 @@ import pybullet as p
 import pybullet_data
 import math
 import time
+import numpy as np
 import underwater
 import test_object
 import debug_params
@@ -15,8 +16,8 @@ def setup_physical_engine(useGUI):
     else:
         physicsClient = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, -10)  # 10 for easy calculation
-    p.setPhysicsEngineParameter(fixedTimeStep=1 / 240, numSolverIterations=50)
+    p.setGravity(0, 0, -9.81)
+    p.setPhysicsEngineParameter(fixedTimeStep=1 / 240, numSolverIterations=100)
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)  # GUI for debug mode
     p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)  # Disable CPU rendering
     return physicsClient
@@ -59,14 +60,14 @@ def main():
     # Load ground and fish BEFORE touching boxId‑dependent stuff
     plane = p.loadURDF("plane.urdf")
     robot_id = p.loadURDF("model/Biomimetic_Fish_v8.urdf",
-                          basePosition=[0, 0, 1],
+                          basePosition=[0, 0, 1.5],
                           baseOrientation=p.getQuaternionFromEuler([0, 0, 0]))
     # test_wall = test_object.create_test_wall(p)
 
     # Set linear / angular damping (simple “viscosity”)
     p.changeDynamics(robot_id, -1,
-                     linearDamping=5.0,
-                     angularDamping=2.0)
+                     linearDamping=7.0,
+                     angularDamping=4.0)
 
     # Set underwater environment
     underwater.apply_buoyancy(p, robot_id)
@@ -86,7 +87,6 @@ def main():
     max_rear_radius = 0.5236  # radius limit for the rear fin (30 * π/180)
     max_front_radius = 0.2618 # radius limit for the front fin (15 * π/180)
     period_steps_rear = 100
-    period_steps_front = 1000
     step_counter = 0
 
     # Initialize rear fin position
@@ -140,7 +140,7 @@ def main():
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     # Run the simulation
-    for step_i in range(10000):
+    for step_i in range(2000):
         p.stepSimulation()
 
         # Rear fin control
@@ -157,7 +157,7 @@ def main():
         underwater.apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
 
         # Left fin control
-        angle_left = max_front_radius * math.sin(2 * math.pi * step_counter / period_steps_front)
+        angle_left = 0.1
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=left_fin_id,
@@ -166,9 +166,10 @@ def main():
             positionGain=1.0,
             force=10
         )
+        left_lift = underwater.apply_fin_lift(p, robot_id, left_fin_id)
 
         # Right fin control
-        angle_right = max_front_radius * math.cos(2 * math.pi * step_counter / period_steps_front)
+        angle_right = 0.1
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=right_fin_id,
@@ -177,6 +178,7 @@ def main():
             positionGain=1.0,
             force=10
         )
+        right_lift = underwater.apply_fin_lift(p, robot_id, right_fin_id)
 
         # Perform ray test and show with debug laser
         # if step_i % 50 == 0:
@@ -194,6 +196,13 @@ def main():
         #         bodyB=plane,
         #         distance=0.15)
         #     print(len(arr_closet) > 0)
+
+        # if step_i % 100 == 0:
+        #     pos, _ = p.getBasePositionAndOrientation(robot_id)
+        #     lin_vel, _ = p.getBaseVelocity(robot_id)
+        #     fish_speed = np.linalg.norm(lin_vel)
+        #     print(f"Z位置: {pos[2]:.3f}m, Fish speed: {fish_speed:.3f}m/s",
+        #     f"左鳍升力: {left_lift:.4f}N | 右鳍升力: {right_lift:.4f}N")
 
         # Camera control
         # camera_follow(robot_id)
