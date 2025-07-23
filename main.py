@@ -126,7 +126,7 @@ def main():
 
     # Run 10 steps to ensure the initialization
     p.setRealTimeSimulation(0)  # Disable real time simulation
-    for _ in range(10):
+    for _ in range(20):
         p.stepSimulation()
         time.sleep(1 / 240)
     # ------------------------------------------------------------------------
@@ -135,7 +135,8 @@ def main():
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
-    p.resetBasePositionAndOrientation(robot_id, [0, 0, 1], p.getQuaternionFromEuler([0, 0, 0]))
+    # Reset the position and orientation
+    p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
 
     # Run the simulation
     for step_i in range(10000):
@@ -146,9 +147,9 @@ def main():
         # underwater.apply_water_drag(p, robot_id)  # optional
 
         # Rear fin forward control
-        forward_k = 1  # forward control
-        steer_angle = 0.0  # steer control
-        angle_rear = max_rear_radius * math.sin(forward_k * 2 * math.pi * step_counter / period_steps_rear) + steer_angle
+        speed_factor = 1  # Forward speed control
+        steer_angle = 0.0  # Steer control
+        angle_rear = max_rear_radius * math.sin(speed_factor * 2 * math.pi * step_counter / period_steps_rear) + steer_angle
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=rear_fin_id,
@@ -158,10 +159,10 @@ def main():
             force=10
         )
         # Rear fin thrust
-        underwater.apply_tail_thrust(p, robot_id, rear_fin_id, C_T=2000)
+        forward_thrust, steer_thrust = underwater.apply_tail_thrust(p, robot_id, rear_fin_id)
 
         # Left fin control
-        angle_left = 0.15
+        angle_left = 0.15  # Left fin control
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=left_fin_id,
@@ -173,7 +174,7 @@ def main():
         left_lift = underwater.apply_fin_lift(p, robot_id, left_fin_id)
 
         # Right fin control
-        angle_right = 0.15
+        angle_right = 0.15  # Right fin control
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=right_fin_id,
