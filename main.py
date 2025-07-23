@@ -145,8 +145,9 @@ def main():
         underwater.apply_buoyancy(p, robot_id)
         # underwater.apply_water_drag(p, robot_id)  # optional
 
-        # Rear fin control
-        angle_rear = max_rear_radius * math.sin(2 * math.pi * step_counter / period_steps_rear)
+        # Rear fin forward control
+        forward_k = 1
+        angle_rear = max_rear_radius * math.sin(forward_k * 2 * math.pi * step_counter / period_steps_rear)
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=rear_fin_id,
