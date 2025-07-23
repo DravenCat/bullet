@@ -52,8 +52,8 @@ def apply_tail_thrust(p, body_id, joint_id,
                       chord=0.025,       # fin depth            (m)
                       rho=1000,          # water density        (kg/m³)
                       C_T=2000,          # thrust coefficient   (‑)
-                      C_T_steer=500,     # steering coefficient (‑)
-                      damping_factor=0.2):  # damping factor for sway reduction
+                      C_T_steer=300,     # steering coefficient (‑)
+                      damping_factor=0.3):  # damping factor for sway reduction
     """ Rear fin thrust helper"""
     # joint kinematics
     theta, omega = p.getJointState(body_id, joint_id)[:2]
@@ -104,7 +104,7 @@ def apply_tail_thrust(p, body_id, joint_id,
     # 添加侧向阻尼减少摇摆
     lin_vel, ang_vel = p.getBaseVelocity(body_id)
     lateral_vel = np.dot(lin_vel, lateral_vector)
-    damping_force = damping_factor * lateral_vel * lateral_vector
+    damping_force = -damping_factor * lateral_vel * lateral_vector
     p.applyExternalForce(body_id, -1, damping_force.tolist(), tail_pos, p.WORLD_FRAME)
 
     return forward_thrust, steer_thrust
