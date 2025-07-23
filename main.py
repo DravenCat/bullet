@@ -67,7 +67,7 @@ def main():
     # Set linear / angular damping (simple “viscosity”)
     p.changeDynamics(robot_id, -1,
                      linearDamping=7.0,
-                     angularDamping=4.0)
+                     angularDamping=10.0)
 
 
     # ------------------------------------------------------------------------
@@ -146,8 +146,9 @@ def main():
         # underwater.apply_water_drag(p, robot_id)  # optional
 
         # Rear fin forward control
-        forward_k = 1
-        angle_rear = max_rear_radius * math.sin(forward_k * 2 * math.pi * step_counter / period_steps_rear)
+        forward_k = 1  # forward control
+        steer_angle = 0.0  # steer control
+        angle_rear = max_rear_radius * math.sin(forward_k * 2 * math.pi * step_counter / period_steps_rear) + steer_angle
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
             jointIndex=rear_fin_id,
@@ -208,7 +209,7 @@ def main():
         #     f"左鳍升力: {left_lift:.4f}N | 右鳍升力: {right_lift:.4f}N")
 
         # Camera control
-        camera_follow(robot_id)
+        # camera_follow(robot_id)
 
         # Click the reset button
         if p.readUserDebugParameter(btn) != previous_btn_value:

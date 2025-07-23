@@ -16,7 +16,7 @@ def get_buoyancy_force(p, body_id):
 
     # 计算浮力 (ρ_water * g * V_displaced)
     # 假设鱼体密度接近水密度，浮力≈重力
-    buoyancy = -mass * gravity * 2.3  # 1.0表示中性浮力
+    buoyancy = -mass * gravity * 2.2  # 1.0表示中性浮力
 
     return buoyancy
 
@@ -51,31 +51,63 @@ def apply_tail_thrust(p, body_id, joint_id,
                       fin_len=0.08,      # distance hinge → tip  (m)
                       chord=0.025,       # fin depth            (m)
                       rho=1000,          # water density        (kg/m³)
-                      C_T=2000):          # thrust coefficient   (‑)
+                      C_T=2000,          # thrust coefficient   (‑)
+                      C_T_steer=500,     # steering coefficient (‑)
+                      damping_factor=0.2):  # damping factor for sway reduction
     """ Rear fin thrust helper"""
     # joint kinematics
     theta, omega = p.getJointState(body_id, joint_id)[:2]
     v_tip = abs(omega) * fin_len  # lateral speed at tip
 
-    # simplified thrust from elongated‑body theory
-    thrust = -0.5 * rho * C_T * chord * fin_len * v_tip ** 2 * abs(math.sin(theta))
+    # 计算基本推力大小
+    thrust_base = -0.5 * rho * chord * fin_len * v_tip ** 2
+
+    # 分解为前进推力和转向分量
+    # 前进推力与尾鳍偏角余弦成正比
+    forward_thrust = C_T * thrust_base * abs(math.sin(theta)) * math.cos(theta)
+
+    # 转向推力与尾鳍偏角正弦成正比
+    steer_thrust = C_T_steer * thrust_base * math.sin(theta)
 
     # body‑x axis in world frame
     _, orn = p.getBasePositionAndOrientation(body_id)
     rotation_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
     forward_vector = rotation_matrix[:, 0]  # 第一列为前进方向
+    lateral_vector = rotation_matrix[:, 1]  # 侧向方向 (y轴)
+
+    # 计算推力向量
+    forward_force = forward_thrust * forward_vector
+    lateral_force = steer_thrust * lateral_vector
+    total_force = forward_force + lateral_force
 
     # 施加推力 - 在尾鳍位置而非重心
     link_state = p.getLinkState(body_id, joint_id)
     tail_pos = link_state[0]  # 尾鳍位置
 
-    thrust_vector = thrust * forward_vector
+    # 计算转向力矩 (绕z轴旋转)
+    # 力臂长度：从质心到尾鳍位置的距离
+    com_pos, _ = p.getBasePositionAndOrientation(body_id)
+    moment_arm = np.array(tail_pos) - np.array(com_pos)
+    moment_arm_xy = moment_arm.copy()
+    moment_arm_xy[2] = 0  # 只考虑xy平面内的力臂
 
+    # 计算力矩 (力矩 = 力臂 × 力)
+    torque = np.cross(moment_arm_xy, lateral_force)
+    steering_torque = np.array([0, 0, torque[2]])  # 只保留z轴力矩
+
+    # 施加力和力矩
     p.applyExternalForce(body_id, -1,
-                         thrust_vector.tolist(),  # world‑space force
-                         tail_pos,  # at COM
+                         total_force.tolist(),
+                         tail_pos,
                          p.WORLD_FRAME)
-    return thrust
+
+    # 添加侧向阻尼减少摇摆
+    lin_vel, ang_vel = p.getBaseVelocity(body_id)
+    lateral_vel = np.dot(lin_vel, lateral_vector)
+    damping_force = damping_factor * lateral_vel * lateral_vector
+    p.applyExternalForce(body_id, -1, damping_force.tolist(), tail_pos, p.WORLD_FRAME)
+
+    return forward_thrust, steer_thrust
 
 
 def apply_fin_lift(p, body_id, joint_id,
