@@ -54,12 +54,12 @@ def main():
     physicsClient = setup_physical_engine(useGUI=True)
     # ------------------------------------------------------------------------
 
-    # --------------Load and render the model ------------------------------------------
+    # --------------Load and render the robots ------------------------------------------
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)  # Disable rendering before all the models being loaded
 
     # Load ground and fish BEFORE touching boxId‑dependent stuff
     plane = p.loadURDF("plane.urdf")
-    robot_id = p.loadURDF("model/Biomimetic_Fish_v8.urdf",
+    robot_id = p.loadURDF("robots/Biomimetic_Fish_v8.urdf",
                           basePosition=[0, 0, 1.5],
                           baseOrientation=p.getQuaternionFromEuler([0, 0, 0]))
     # test_wall = test_object.create_test_wall(p)
