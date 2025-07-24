@@ -1,14 +1,28 @@
-# encoding:utf-8
-# train.py
-from pybullet_envs.bullet import CartPoleBulletEnv
-from stable_baselines3.dqn import DQN
-from time import sleep
-import pybullet as p
+import os
+from agent import FishGymEnv, make_agent
 
-env = CartPoleBulletEnv(renders=False, discrete_actions=True)
+def main():
+    os.makedirs("models", exist_ok=True)
 
-model = DQN(policy="MlpPolicy", env=env)
+    # Create environment (set render=True to watch)
+    env = FishGymEnv(render=False)
 
-print("开始训练，稍等片刻")
-model.learn(total_timesteps=10000)
-model.save("./models/test_models")
+    # Create or load agent
+    model_path = "models/fish_swim"
+    if os.path.exists(model_path + ".zip"):
+        model = make_agent(env)
+        model = model.load(model_path, env=env)
+        print("Loaded existing model.")
+    else:
+        model = make_agent(env)
+
+    # Train
+    TIMESTEPS = 1_000_000
+    model.learn(total_timesteps=TIMESTEPS)
+
+    # Save
+    model.save(model_path)
+    print(f"Model saved to {model_path}.zip")
+
+if __name__ == "__main__":
+    main()
