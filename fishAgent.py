@@ -19,13 +19,16 @@ class ReplayBuffer:
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
+        # 将 dones 转换为整数类型 (0 或 1)
+        dones_int = [int(d) for d in dones]
+
         return (
-            torch.tensor(np.array(states),
-                         torch.tensor(actions),
-                         torch.tensor(rewards, dtype=torch.float32),
-                         torch.tensor(np.array(next_states)),
-                         torch.tensor(dones, dtype=torch.uint8)
-                         ))
+            torch.tensor(np.array(states)),
+            torch.tensor(actions),
+            torch.tensor(rewards, dtype=torch.float32),
+            torch.tensor(np.array(next_states)),
+            torch.tensor(dones_int, dtype=torch.uint8)
+        )
 
     def __len__(self):
         return len(self.buffer)
