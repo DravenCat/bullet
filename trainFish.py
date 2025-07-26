@@ -1,35 +1,27 @@
 import numpy as np
-
+import math
 
 # 状态维度：8个特征
 STATE_DIM = 8
-# 动作维度：离散动作空间大小（4个动作，每个动作3个选择 = 81种组合）
-ACTION_DIM = 81
-
-
-# 动作映射：将离散动作索引映射到具体的控制参数
+# 更新后的动作维度
+ACTION_DIM = 625
 def action_mapping(action_idx):
-    """将离散动作索引映射到控制参数"""
-    # 动作空间分解：
-    # speed_factor: [0.5, 1.0, 1.5] - 3种
-    # steer_angle: [-0.1, 0, 0.1] - 3种
-    # angle_left: [-0.1, 0.15, 0.2] - 3种
-    # angle_right: [-0.1, 0.15, 0.2] - 3种
-    # 总动作数 = 3*3*3*3 = 81
+    """将离散动作索引映射到控制参数（每个参数5种选择）"""
+    # 动作维度为 5×5×5×5
+    speed_idx = action_idx // (5 * 5 * 5)        # [0-4]
+    action_idx %= (5 * 5 * 5)
 
-    # 计算各个动作的索引
-    speed_idx = action_idx // 27
-    action_idx %= 27
-    steer_idx = action_idx // 9
-    action_idx %= 9
-    left_idx = action_idx // 3
-    right_idx = action_idx % 3
+    steer_idx = action_idx // (5 * 5)            # [0-4]
+    action_idx %= (5 * 5)
 
-    # 映射到具体值
-    speed_factor = [0.5, 1.0, 1.5][speed_idx]
-    steer_angle = [-0.1, 0, 0.1][steer_idx]
-    angle_left = [-0.1, 0.15, 0.2][left_idx]
-    angle_right = [-0.1, 0.15, 0.2][right_idx]
+    left_idx = action_idx // 5                   # [0-4]
+    right_idx = action_idx % 5                   # [0-4]
+
+    # 动作取值列表
+    speed_factor = [0.5, 0.75, 1.0, 1.25, 1.5][speed_idx]
+    steer_angle = [-0.1, -0.05, 0, 0.05, 0.1][steer_idx]
+    angle_left = [-0.1, 0, 0.075, 0.15, 0.2][left_idx]
+    angle_right = [-0.1, 0, 0.075, 0.15, 0.2][right_idx]
 
     return speed_factor, steer_angle, angle_left, angle_right
 
@@ -80,6 +72,6 @@ def calculate_reward(state, prev_state):
     total_reward = forward_reward + depth_penalty + stability_reward + direction_penalty
 
     # 终止条件：如果深度偏差太大或姿态失控
-    done = (abs(state[0] - 1.5) > 0.5) or (abs(state[4]) > 0.8) or (abs(state[5]) > 0.8)
+    done = (abs(state[0] - 1.5) > 0.5) or (abs(state[4]) > (math.pi)/2) or (abs(state[5]) > (math.pi)/2)
 
     return total_reward, done
