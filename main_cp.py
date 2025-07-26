@@ -221,8 +221,8 @@ def main():
         )
 
         # 训练参数
-        num_episodes = 1000
-        max_steps_per_episode = 1000
+        num_episodes = 300
+        max_steps_per_episode = 2000
         save_interval = 50
 
         # 训练循环
@@ -230,6 +230,12 @@ def main():
             # 重置环境
             p.resetSimulation()
             # --------------- Reload environment ---------------------------------------------
+            # 随机生成目标位置 (在合理范围内)
+            target_x = random.uniform(-5, 5)
+            target_y = random.uniform(-5, 5)
+            target_z = random.uniform(1.0, 3.0)
+            target_pos = [target_x, target_y, target_z]
+
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                        0)  # Disable rendering before all the models being loaded
             plane, robot_id, rear_fin_id, left_fin_id, right_fin_id = load_environment(p)
@@ -245,7 +251,7 @@ def main():
             p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
 
             # 获取初始状态
-            state = get_state(robot_id, p)
+            state = get_state(robot_id, p, target_pos)
             prev_state = None
             episode_reward = 0
 
@@ -279,7 +285,7 @@ def main():
                 p.stepSimulation()
 
                 # 获取新状态
-                next_state = get_state(robot_id, p)
+                next_state = get_state(robot_id, p, target_pos)
 
                 # 计算奖励
                 reward, done = calculate_reward(next_state, state)
