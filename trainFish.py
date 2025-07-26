@@ -25,8 +25,8 @@ def action_mapping(action_idx):
     # 动作取值列表（每个参数9个值）
     speed_factor = np.linspace(0.75, 1.25, 9)[speed_idx]
     steer_angle = np.linspace(-0.05, 0.05, 9)[steer_idx]
-    angle_left = [-0.05, -0.025, -0.0125, 0, 0.075, 0.135, 0.15, 0.165, 0.18][left_idx]
-    angle_right = [-0.05, -0.025, -0.0125, 0, 0.075, 0.135, 0.15, 0.165, 0.18][right_idx]
+    angle_left = np.linspace(0.1, 0.2, 9)[left_idx]
+    angle_right = np.linspace(0.1, 0.2, 9)[right_idx]
 
     return speed_factor, steer_angle, angle_left, angle_right
 
