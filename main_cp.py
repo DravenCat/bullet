@@ -214,7 +214,7 @@ def main():
             lr=0.001,
             gamma=0.99,
             e_greed=0.9,
-            e_greed_decrement=1e-4,
+            e_greed_decrement=1e-5,
             target_update_freq=200,
             buffer_size=10000,
             batch_size=64
