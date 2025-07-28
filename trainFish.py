@@ -67,7 +67,7 @@ def get_state(robot_id, p, target_pos):
 
 
 # 计算奖励 (考虑目标位置)
-def calculate_reward(state, prev_state):
+def calculate_reward(state, prev_state, distance_tolerance=0.3):
     # 距离减少奖励：鼓励向目标移动
     if prev_state is not None:
         distance_reward = (prev_state[10] - state[10]) * 5  # 距离减少的奖励
@@ -91,6 +91,6 @@ def calculate_reward(state, prev_state):
     total_reward = distance_reward + direction_reward + stability_reward
 
     # 终止条件：到达目标或姿态失控
-    done = (state[10] < 0.3) or (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
+    done = (state[10] < distance_tolerance) or (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
 
     return total_reward, done
