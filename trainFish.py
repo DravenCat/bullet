@@ -70,7 +70,7 @@ def get_state(robot_id, p, target_pos):
 def calculate_reward(state, prev_state):
     # 距离减少奖励：鼓励向目标移动
     if prev_state is not None:
-        distance_reward = (prev_state[10] - state[10]) * 20  # 距离减少的奖励
+        distance_reward = (prev_state[10] - state[10]) * 5  # 距离减少的奖励
     else:
         distance_reward = 0
 
@@ -82,15 +82,15 @@ def calculate_reward(state, prev_state):
     if direction_diff > math.pi:
         direction_diff = 2 * math.pi - direction_diff
 
-    direction_reward = -direction_diff * 5  # 方向差越小奖励越大
+    direction_reward = -direction_diff * 1  # 方向差越小奖励越大
 
     # 姿态稳定奖励：减少翻滚和俯仰
-    stability_reward = - (abs(state[4]) + abs(state[5])) * 2  # roll + pitch
+    stability_reward = - (abs(state[4]) + abs(state[5])) * 1  # roll + pitch
 
     # 总奖励
     total_reward = distance_reward + direction_reward + stability_reward
 
     # 终止条件：到达目标或姿态失控
-    done = (state[10] < 0.3) or (abs(state[4]) > (math.pi) / 2) or (abs(state[5]) > (math.pi) / 2)
+    done = (state[10] < 0.3) or (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
 
     return total_reward, done

@@ -213,8 +213,8 @@ def main():
             act_dim=ACTION_DIM,
             lr=0.001,
             gamma=0.99,
-            e_greed=0.2,
-            e_greed_decrement=1e-5,
+            e_greed=0.9,
+            e_greed_decrement=1e-4,
             target_update_freq=200,
             buffer_size=10000,
             batch_size=64
@@ -231,9 +231,13 @@ def main():
             p.resetSimulation()
             # --------------- Reload environment ---------------------------------------------
             # 随机生成目标位置 (在合理范围内)
-            target_x = random.uniform(-5, 5)
-            target_y = random.uniform(-5, 5)
-            target_z = random.uniform(1.0, 3.0)
+            distance = random.uniform(1, 6)
+            angle = random.uniform(0, math.pi / 6)
+            azimuth = random.uniform(0, 2 * math.pi)
+
+            target_x = - abs(distance * math.cos(angle))
+            target_y = distance * math.sin(angle) * math.cos(azimuth)
+            target_z = abs(distance * math.sin(angle) * math.sin(azimuth) + 1.5)
             target_pos = [target_x, target_y, target_z]
 
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
@@ -310,7 +314,8 @@ def main():
 
             # 打印回合信息
             print(
-                f"Episode: {episode + 1}, Reward: {episode_reward:.2f}, Steps: {step + 1}, Epsilon: {agent.e_greed:.4f}")
+                f"Episode: {episode + 1}, Reward: {episode_reward:.2f}, Steps: {step + 1}, Epsilon: {agent.e_greed:.4f}, "
+                f"Target Position: {target_pos}")
 
             # 定期保存模型
             if (episode + 1) % save_interval == 0:
