@@ -222,13 +222,13 @@ def main():
         # 训练参数
         num_episodes = 300
         max_steps_per_episode = 2000
-        save_interval = 50
+        save_interval = 20
 
         # 训练循环
         for episode in range(num_episodes):
-            # 重置环境
-            p.resetSimulation()
             # --------------- Reload environment ---------------------------------------------
+            p.resetSimulation()
+
             target_pos = generate_random_target()
 
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
