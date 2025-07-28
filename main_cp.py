@@ -7,7 +7,8 @@ import underwater
 import debug_params
 
 
-load_existing_model = False
+DEBUG_ENV_MODE = False
+LOAD_EXISTING_MODEL = False
 
     
 def setup_physical_engine(useGUI):
@@ -137,7 +138,7 @@ def main():
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
     # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
-    if load_existing_model:
+    if DEBUG_ENV_MODE:
         # Reset the position and orientation
         p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
 
@@ -205,7 +206,7 @@ def main():
         print("Final pose:", p.getBasePositionAndOrientation(robot_id))
         p.disconnect()
 
-    else:
+    elif (not DEBUG_ENV_MODE) and (not LOAD_EXISTING_MODEL):
         # 创建智能体
         agent = FishDQNAgent(
             obs_dim=STATE_DIM,
@@ -315,6 +316,82 @@ def main():
 
         # 保存最终模型
         torch.save(agent.q_net.state_dict(), "./models/fish_model_final.pth")
+        p.disconnect()
+
+    elif (not DEBUG_ENV_MODE) and LOAD_EXISTING_MODEL:
+        # 创建智能体
+        agent = FishDQNAgent(
+            obs_dim=STATE_DIM,
+            act_dim=ACTION_DIM,
+            lr=0.001,
+            gamma=0.99,
+            e_greed=0.9,
+            e_greed_decrement=1e-4,
+            target_update_freq=200,
+            buffer_size=10000,
+            batch_size=64
+        )
+        model_path = "./models/fish_model_final.pth"
+        print(f"加载最终模型: {model_path}")
+
+        agent.q_net.load_state_dict(torch.load(model_path))
+        agent.q_net.eval()  # 设置为评估模式
+
+        # 随机生成目标位置
+        target_pos = generate_random_target()
+        print(f"目标位置: {target_pos}")
+
+        # 重置鱼的位置
+        p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
+
+        # 获取初始状态
+        state = get_state(robot_id, p, target_pos)
+        prev_state = None
+        step_counter = 0
+
+        # 演示循环
+        for step_i in range(2500):
+            # 使用模型预测动作
+            action_idx = agent.predict(state)
+            speed_factor, steer_angle, angle_left, angle_right = action_mapping(action_idx)
+
+            # 执行动作 (与训练时相同)
+            angle_rear = steer_angle + 0.5 * speed_factor * math.sin(2 * math.pi * step_counter / 100)
+            p.setJointMotorControl2(robot_id, rear_fin_id, p.POSITION_CONTROL,
+                                    targetPosition=angle_rear, positionGain=1.0, force=10)
+            p.setJointMotorControl2(robot_id, left_fin_id, p.POSITION_CONTROL,
+                                    targetPosition=angle_left, positionGain=1.0, force=10)
+            p.setJointMotorControl2(robot_id, right_fin_id, p.POSITION_CONTROL,
+                                    targetPosition=angle_right, positionGain=1.0, force=10)
+
+            # 应用流体力学
+            underwater.apply_buoyancy(p, robot_id)
+            underwater.apply_tail_thrust(p, robot_id, rear_fin_id)
+            underwater.apply_fin_lift(p, robot_id, left_fin_id)
+            underwater.apply_fin_lift(p, robot_id, right_fin_id)
+
+            # 物理步进
+            p.stepSimulation()
+
+            # 获取新状态
+            next_state = get_state(robot_id, p, target_pos)
+            reward, done = calculate_reward(next_state, state, distance_tolerance=1)  # More distance tolerance in presentation
+
+            # 显示信息
+            distance = next_state[10]
+            print(f"步数: {step_counter}, 距离: {distance:.2f}, 奖励: {reward:.2f}")
+
+            # 检查是否到达目标
+            if done:
+                print("到达目标! ")
+                break
+
+            # Camera control
+            # camera_follow(robot_id)
+
+            time.sleep(1 / 240)
+
+        # p.stopStateLogging(log_id)  # Stop recording
         p.disconnect()
 
 
