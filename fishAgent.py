@@ -49,7 +49,8 @@ class FishDQNAgent:
         self.e_greed_decrement = e_greed_decrement
         self.target_update_freq = target_update_freq
         self.batch_size = batch_size
-
+        # 上一步动作（初始化为 None，表示不限）
+        self.prev_action_idx = None
         # 创建Q网络和目标网络
         self.q_net = DQNModel(obs_dim, act_dim)
         self.target_net = DQNModel(obs_dim, act_dim)
@@ -63,25 +64,63 @@ class FishDQNAgent:
     def sync_target(self):
         """同步目标网络参数"""
         self.target_net.load_state_dict(self.q_net.state_dict())
-
+    def _decompose(self, action_idx):
+        """把动作索引拆成四个 0-8 的子索引"""
+        speed = action_idx // (9*9*9)
+        rem = action_idx % (9*9*9)
+        steer = rem // (9*9)
+        rem = rem % (9*9)
+        left = rem // 9
+        right = rem % 9
+        return speed, steer, left, right
+    def _is_adjacent(self, a1, a2, dims_to_restrict=[0,1,2,3]):
+        """仅当子索引在规定维度上相差 ≤1 时才视作相邻"""
+        idx1 = self._decompose(a1)
+        idx2 = self._decompose(a2)
+        for d in dims_to_restrict:
+           if abs(idx1[d] - idx2[d]) > 1:
+                return False
+        return True
+    def _valid_actions(self):
+        """返回与上一步相邻的所有合法动作索引"""
+        if self.prev_action_idx is None:
+            return list(range(self.act_dim))
+        return [
+            a for a in range(self.act_dim)
+            if self._is_adjacent(a, self.prev_action_idx)
+       ]
     def sample(self, state):
         """ε-greedy策略选择动作"""
+        valid = self._valid_actions()
         if np.random.uniform(0, 1) < self.e_greed:
-            action = np.random.randint(self.act_dim)
+            action = random.choice(valid)
         else:
-            action = self.predict(state)
-
+            # 在 valid 动作里做贪心选
+            state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                q = self.q_net(state_t).squeeze(0).cpu().numpy()
+            # 把不合法的位置设为 -inf
+            mask = np.full_like(q, -np.inf)
+            mask[valid] = q[valid]
+            action = int(mask.argmax())
         # 逐渐减小探索率
         if self.e_greed_decrement > 0:
             self.e_greed = max(0.01, self.e_greed - self.e_greed_decrement)
+        # 更新 prev_action_idx
+        self.prev_action_idx = action
         return action
 
     def predict(self, state):
         """预测最佳动作"""
-        state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        valid = self._valid_actions()
+        state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         with torch.no_grad():
-            q_values = self.q_net(state)
-        return q_values.argmax().item()
+            q = self.q_net(state_t).squeeze(0).cpu().numpy()
+        mask = np.full_like(q, -np.inf)
+        mask[valid] = q[valid]
+        action = int(mask.argmax())
+        self.prev_action_idx = action
+        return action
 
     def store_experience(self, state, action, reward, next_state, done):
         """存储经验到回放缓冲区"""
