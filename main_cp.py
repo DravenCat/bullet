@@ -1,6 +1,5 @@
 import pybullet as p
 import pybullet_data
-import math
 import time
 from fishAgent import *
 from trainFish import *
@@ -230,15 +229,7 @@ def main():
             # 重置环境
             p.resetSimulation()
             # --------------- Reload environment ---------------------------------------------
-            # 随机生成目标位置 (在合理范围内)
-            distance = random.uniform(1, 6)
-            angle = random.uniform(0, math.pi / 6)
-            azimuth = random.uniform(0, 2 * math.pi)
-
-            target_x = - abs(distance * math.cos(angle))
-            target_y = distance * math.sin(angle) * math.cos(azimuth)
-            target_z = abs(distance * math.sin(angle) * math.sin(azimuth) + 1.5)
-            target_pos = [target_x, target_y, target_z]
+            target_pos = generate_random_target()
 
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                        0)  # Disable rendering before all the models being loaded

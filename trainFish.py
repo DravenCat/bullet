@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import math
 
@@ -94,3 +96,15 @@ def calculate_reward(state, prev_state, distance_tolerance=0.3):
     done = (state[10] < distance_tolerance) or (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
 
     return total_reward, done
+
+
+def generate_random_target():
+    # 随机生成目标位置 (在合理范围内)
+    distance = random.uniform(1, 6)
+    angle = random.uniform(0, math.pi / 6)
+    azimuth = random.uniform(0, 2 * math.pi)
+
+    target_x = - abs(distance * math.cos(angle))
+    target_y = distance * math.sin(angle) * math.cos(azimuth)
+    target_z = abs(distance * math.sin(angle) * math.sin(azimuth) + 1.5)
+    return [target_x, target_y, target_z]
