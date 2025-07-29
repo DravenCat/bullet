@@ -106,6 +106,22 @@ def load_environment(p):
     return plane, robot_id, rear_fin_id, left_fin_id, right_fin_id
 
 
+def render_target(p, target_pos):
+    # 创建目标球体可视化
+    r_target = 0.3
+    target_visual_shape = p.createVisualShape(
+        shapeType=p.GEOM_SPHERE,
+        radius=r_target,
+        rgbaColor=[1, 0, 0, 1]  # 红色
+    )
+    target_id = p.createMultiBody(
+        baseMass=0,  # 质量为0，不受物理影响
+        baseVisualShapeIndex=target_visual_shape,
+        basePosition=target_pos
+    )
+    return target_id
+
+
 def main():
     # -------------Set up the physical engine -----------------------------------------
     physicalClient = setup_physical_engine(useGUI=True)
@@ -138,9 +154,10 @@ def main():
 
     # --------------- Simulation ---------------------------------------------
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)  # Rendering after all the models have been loaded
-    # log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move.mp4")  # Start recording
 
     if DEBUG_ENV_MODE:
+        log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move_debug.mp4")  # Start recording
+
         # Reset the position and orientation
         p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
 
@@ -202,13 +219,15 @@ def main():
             step_counter += 1
             time.sleep(1 / 240)
 
-        # p.stopStateLogging(log_id)  # Stop recording
+        p.stopStateLogging(log_id)  # Stop recording
         # -------------------------------------------------------------------------
 
         print("Final pose:", p.getBasePositionAndOrientation(robot_id))
         p.disconnect()
 
     elif (not DEBUG_ENV_MODE) and (not LOAD_EXISTING_MODEL):
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # GUI for debug mode
+
         # 创建智能体
         agent = FishDQNAgent(
             obs_dim=STATE_DIM,
@@ -225,14 +244,20 @@ def main():
         # 训练参数
         num_episodes = 200
         max_steps_per_episode = 2000
-        save_interval = 20
+        save_interval = 5
+        log_interval = 5
 
         # 训练循环
         for episode in range(num_episodes):
+            log_id = 0
+            if (episode + 1) % save_interval == 0:
+                log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, f"log/fish_move_ep{episode + 1}.mp4")  # Start recording
+
             # --------------- Reload environment ---------------------------------------------
             p.resetSimulation()
 
             target_pos = generate_random_target()
+            target_id = render_target(p, target_pos)
 
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                        0)  # Disable rendering before all the models being loaded
@@ -251,6 +276,7 @@ def main():
             # 获取初始状态
             state = get_state(robot_id, p, target_pos)
             prev_state = None
+            info = None
             episode_reward = 0
 
             # 单回合循环
@@ -286,7 +312,7 @@ def main():
                 next_state = get_state(robot_id, p, target_pos)
 
                 # 计算奖励
-                reward, done = calculate_reward(next_state, state)
+                reward, done, info= calculate_reward(next_state, state, distance_tolerance=0.3)
                 episode_reward += reward
 
                 # 存储经验
@@ -309,29 +335,35 @@ def main():
             # 打印回合信息
             print(
                 f"Episode: {episode + 1}, Reward: {episode_reward:.2f}, Steps: {step + 1}, Epsilon: {agent.e_greed:.4f}, "
-                f"Target Position: {target_pos}")
+                f"Status: {info}, Target Position: {target_pos}")
 
             # 定期保存模型
             if (episode + 1) % save_interval == 0:
-                torch.save(agent.q_net.state_dict(), f"./models/fish_model_ep{episode + 1}.pth")
+                torch.save(agent.q_net.state_dict(), f"./models/fish_model_ep{episode + 1}_{info}.pth")
                 print(f"Model saved at episode {episode + 1}")
+
+            if (episode + 1) % log_interval == 0:
+                p.stopStateLogging(log_id)  # Stop recording
 
         # 保存最终模型
         torch.save(agent.q_net.state_dict(), "./models/fish_model_final.pth")
         p.disconnect()
 
     elif (not DEBUG_ENV_MODE) and LOAD_EXISTING_MODEL:
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # GUI for debug mode
+        log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "log/fish_move_final.mp4")  # Start recording
+
         # 创建智能体
         agent = FishDQNAgent(
             obs_dim=STATE_DIM,
             act_dim=ACTION_DIM,
-            lr=0.001,
+            lr=0.0005,
             gamma=0.99,
-            e_greed=0.9,
-            e_greed_decrement=1e-4,
+            e_greed=0.95,
+            e_greed_decrement=5e-6,
             target_update_freq=200,
-            buffer_size=10000,
-            batch_size=64
+            buffer_size=20000,
+            batch_size=128
         )
         model_path = "./models/fish_model_ep220.pth"
         print(f"加载最终模型: {model_path}")
@@ -399,7 +431,7 @@ def main():
 
             # 获取新状态
             next_state = get_state(robot_id, p, target_pos)
-            reward, done = calculate_reward(next_state, state, distance_tolerance=0.3)  # More distance tolerance in presentation
+            reward, done, info = calculate_reward(next_state, state, distance_tolerance=0.3)  # More distance tolerance in presentation
 
             # 更新状态
             state = next_state
@@ -417,7 +449,7 @@ def main():
 
             time.sleep(1 / 240)
 
-        # p.stopStateLogging(log_id)  # Stop recording
+        p.stopStateLogging(log_id)  # Stop recording
         p.disconnect()
 
 

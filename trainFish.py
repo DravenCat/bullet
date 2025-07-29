@@ -98,9 +98,17 @@ def calculate_reward(state, prev_state, distance_tolerance=0.3):
     total_reward = distance_reward + direction_reward + stability_reward
 
     # 终止条件：到达目标或姿态失控
-    done = (state[10] < distance_tolerance) or (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
+    info = None
+    arrive = state[10] < distance_tolerance
+    fail = (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
+    done = arrive or fail
+    if done:
+        if arrive:
+            info = "arrive"
+        elif fail:
+            info = "fail"
 
-    return total_reward, done
+    return total_reward, done, info
 
 
 def generate_random_target():
