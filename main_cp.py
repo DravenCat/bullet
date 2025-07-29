@@ -10,7 +10,7 @@ import debug_params
 
 
 DEBUG_ENV_MODE = False
-LOAD_EXISTING_MODEL = True
+LOAD_EXISTING_MODEL = False
 
     
 def setup_physical_engine(useGUI):
@@ -213,13 +213,13 @@ def main():
         agent = FishDQNAgent(
             obs_dim=STATE_DIM,
             act_dim=ACTION_DIM,
-            lr=0.001,
+            lr=0.0005,
             gamma=0.99,
-            e_greed=0.9,
-            e_greed_decrement=1e-5,
+            e_greed=0.95,
+            e_greed_decrement=5e-6,
             target_update_freq=200,
-            buffer_size=10000,
-            batch_size=64
+            buffer_size=20000,
+            batch_size=128
         )
 
         # 训练参数

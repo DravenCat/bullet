@@ -25,7 +25,7 @@ def action_mapping(action_idx):
     right_idx = action_idx % 9  # [0-8]
 
     # 动作取值列表（每个参数9个值）
-    angle_list = np.concat(
+    angle_list = np.concatenate(
         (np.linspace(0.1, 0.15, 4, endpoint=False),
         np.linspace(0.15, 0.4, 5))
     )
