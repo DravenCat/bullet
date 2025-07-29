@@ -1,3 +1,5 @@
+import random
+
 import pybullet as p
 import pybullet_data
 import time
@@ -8,7 +10,7 @@ import debug_params
 
 
 DEBUG_ENV_MODE = False
-LOAD_EXISTING_MODEL = False
+LOAD_EXISTING_MODEL = True
 
     
 def setup_physical_engine(useGUI):
@@ -221,7 +223,7 @@ def main():
         )
 
         # 训练参数
-        num_episodes = 300
+        num_episodes = 200
         max_steps_per_episode = 2000
         save_interval = 20
 
@@ -338,8 +340,31 @@ def main():
         agent.q_net.eval()  # 设置为评估模式
 
         # 随机生成目标位置
-        target_pos = generate_random_target()
+        presentation_target_list = [[-5, 2, 2],
+                                    [-5, -2, 1], 
+                                    [-6, 1, 1.5],
+                                    [-5.5, -1, 0.75],
+                                    [-5, 0, 1.5]]
+        target_pos = presentation_target_list[random.randint(0, 4)]
         print(f"目标位置: {target_pos}")
+
+        # --------------- Reload environment ---------------------------------------------
+        p.resetSimulation()
+
+        target_pos = generate_random_target()
+
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
+                                   0)  # Disable rendering before all the models being loaded
+        plane, robot_id, rear_fin_id, left_fin_id, right_fin_id = load_environment(p)
+
+        # Run 10 steps to ensure the initialization
+        p.setRealTimeSimulation(0)  # Disable real time simulation
+        for _ in range(20):
+            p.stepSimulation()
+            time.sleep(1 / 240)
+        # ------------------------------------------------------------------------
+        p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
+                                   1)  # Disable rendering before all the models being loaded
 
         # 重置鱼的位置
         p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
@@ -356,7 +381,7 @@ def main():
             speed_factor, steer_angle, angle_left, angle_right = action_mapping(action_idx)
 
             # 执行动作 (与训练时相同)
-            angle_rear = steer_angle + 0.5 * speed_factor * math.sin(2 * math.pi * step_counter / 100)
+            angle_rear = steer_angle + 0.5 * speed_factor * math.sin(2 * math.pi * step_i / 100)
             p.setJointMotorControl2(robot_id, rear_fin_id, p.POSITION_CONTROL,
                                     targetPosition=angle_rear, positionGain=1.0, force=10)
             p.setJointMotorControl2(robot_id, left_fin_id, p.POSITION_CONTROL,
@@ -379,7 +404,10 @@ def main():
 
             # 显示信息
             distance = next_state[10]
-            print(f"步数: {step_counter}, 距离: {distance:.2f}, 奖励: {reward:.2f}")
+            print(f"步数: {step_i}, 距离: {distance:.2f}, 奖励: {reward:.2f}")
+
+            # 更新状态
+            state = next_state
 
             # 检查是否到达目标
             if done:
