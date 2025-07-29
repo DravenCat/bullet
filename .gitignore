@@ -1,7 +1,7 @@
 /.idea
 
 /__pycache__
-./models
-./log
+/models
+/log
 ./models/*
 ./log/*
