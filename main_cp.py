@@ -333,7 +333,7 @@ def main():
             buffer_size=10000,
             batch_size=64
         )
-        model_path = "./models/fish_model_final.pth"
+        model_path = "./models/fish_model_ep220.pth"
         print(f"加载最终模型: {model_path}")
 
         agent.q_net.load_state_dict(torch.load(model_path))
@@ -341,17 +341,16 @@ def main():
 
         # 随机生成目标位置
         presentation_target_list = [[-5, 2, 2],
-                                    [-5, -2, 1], 
+                                    [-5, -2, 1],
                                     [-6, 1, 1.5],
                                     [-5.5, -1, 0.75],
                                     [-5, 0, 1.5]]
-        target_pos = presentation_target_list[random.randint(0, 4)]
+        random_choice = random.randint(0, 4)
+        target_pos = presentation_target_list[2]
         print(f"目标位置: {target_pos}")
 
         # --------------- Reload environment ---------------------------------------------
         p.resetSimulation()
-
-        target_pos = generate_random_target()
 
         p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                    0)  # Disable rendering before all the models being loaded
@@ -400,22 +399,21 @@ def main():
 
             # 获取新状态
             next_state = get_state(robot_id, p, target_pos)
-            reward, done = calculate_reward(next_state, state, distance_tolerance=1)  # More distance tolerance in presentation
-
-            # 显示信息
-            distance = next_state[10]
-            print(f"步数: {step_i}, 距离: {distance:.2f}, 奖励: {reward:.2f}")
+            reward, done = calculate_reward(next_state, state, distance_tolerance=0.3)  # More distance tolerance in presentation
 
             # 更新状态
             state = next_state
 
             # 检查是否到达目标
             if done:
+                # 显示信息
+                distance = next_state[10]
+                print(f"Distance: {distance}, 奖励: {reward:.2f}, Target Position: {target_pos}")
                 print("到达目标! ")
                 break
 
             # Camera control
-            # camera_follow(robot_id)
+            camera_follow(robot_id)
 
             time.sleep(1 / 240)
 
