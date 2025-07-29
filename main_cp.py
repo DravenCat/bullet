@@ -244,15 +244,10 @@ def main():
         # 训练参数
         num_episodes = 200
         max_steps_per_episode = 2000
-        save_interval = 5
-        log_interval = 5
+        save_interval = 1
 
         # 训练循环
         for episode in range(num_episodes):
-            log_id = 0
-            if (episode + 1) % save_interval == 0:
-                log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, f"log/fish_move_ep{episode + 1}.mp4")  # Start recording
-
             # --------------- Reload environment ---------------------------------------------
             p.resetSimulation()
 
@@ -272,7 +267,8 @@ def main():
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                        1)  # Disable rendering before all the models being loaded
             p.resetBasePositionAndOrientation(robot_id, [0, 0, 1.5], p.getQuaternionFromEuler([0, 0, 0]))
-
+            log_id = p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4,
+                                         f"log/fish_move_ep{episode + 1}.mp4")  # Start recording
             # 获取初始状态
             state = get_state(robot_id, p, target_pos)
             prev_state = None
@@ -342,8 +338,7 @@ def main():
                 torch.save(agent.q_net.state_dict(), f"./models/fish_model_ep{episode + 1}_{info}.pth")
                 print(f"Model saved at episode {episode + 1}")
 
-            if (episode + 1) % log_interval == 0:
-                p.stopStateLogging(log_id)  # Stop recording
+            p.stopStateLogging(log_id)  # Stop recording
 
         # 保存最终模型
         torch.save(agent.q_net.state_dict(), "./models/fish_model_final.pth")
