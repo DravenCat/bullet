@@ -27,10 +27,10 @@ def action_mapping(action_idx):
     # 动作取值列表（每个参数9个值）
     angle_list = np.concatenate(
         (np.linspace(0.1, 0.15, 4, endpoint=False),
-        np.linspace(0.15, 0.4, 5))
+        np.linspace(0.15, 0.2, 5))
     )
 
-    speed_factor = np.linspace(0.8, 1.2, 9)[speed_idx]
+    speed_factor = np.linspace(1, 1, 9)[speed_idx]
     steer_angle = np.linspace(-0.1, 0.1, 9)[steer_idx]
     angle_left = angle_list[left_idx]
     angle_right = angle_list[right_idx]
@@ -74,10 +74,20 @@ def get_state(robot_id, p, target_pos):
 
 
 # 计算奖励 (考虑目标位置)
-def calculate_reward(state, prev_state, distance_tolerance=0.3):
+def calculate_reward(state, prev_state, distance_tolerance=0.5, float_epsilon=1e-5):
     # 距离减少奖励：鼓励向目标移动
     if prev_state is not None:
-        distance_reward = (prev_state[10] - state[10]) * 5  # 距离减少的奖励
+        # distance_reward = (prev_state[10] - state[10]) * 20  # 距离减少的奖励
+        distance_reward = 10.0
+        if prev_state[10] > state[10] + float_epsilon:
+            if prev_state[7] > state[7] + float_epsilon:
+               distance_reward += 10.0
+            if prev_state[8] > state[8] + float_epsilon:
+                distance_reward += 10.0
+            if prev_state[9] > state[9] + float_epsilon:
+                distance_reward += 10.0
+        elif state[10] > prev_state[10] + float_epsilon:
+            distance_reward = 0.0
     else:
         distance_reward = 0
 
@@ -98,15 +108,18 @@ def calculate_reward(state, prev_state, distance_tolerance=0.3):
     total_reward = distance_reward + direction_reward + stability_reward
 
     # 终止条件：到达目标或姿态失控
-    info = None
+    info = "fail"
     arrive = state[10] < distance_tolerance
-    fail = (abs(state[4]) > (math.pi) / 3) or (abs(state[5]) > (math.pi) / 3)
-    done = arrive or fail
+    over = (state[8] > 1)
+    fail = (abs(state[4]) > (math.pi) / 2) or (abs(state[5]) > (math.pi) / 2)
+    done = arrive or fail or over
     if done:
         if arrive:
             info = "arrive"
         elif fail:
             info = "fail"
+        elif over:
+            info = "over"
 
     return total_reward, done, info
 

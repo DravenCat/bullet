@@ -106,9 +106,8 @@ def load_environment(p):
     return plane, robot_id, rear_fin_id, left_fin_id, right_fin_id
 
 
-def render_target(p, target_pos):
+def render_target(p, target_pos, r_target=0.5):
     # 创建目标球体可视化
-    r_target = 0.3
     target_visual_shape = p.createVisualShape(
         shapeType=p.GEOM_SPHERE,
         radius=r_target,
@@ -252,7 +251,7 @@ def main():
             p.resetSimulation()
 
             target_pos = generate_random_target()
-            target_id = render_target(p, target_pos)
+            target_id = render_target(p, target_pos, r_target=0.5)
 
             p.configureDebugVisualizer(p.COV_ENABLE_RENDERING,
                                        0)  # Disable rendering before all the models being loaded
@@ -308,7 +307,7 @@ def main():
                 next_state = get_state(robot_id, p, target_pos)
 
                 # 计算奖励
-                reward, done, info= calculate_reward(next_state, state, distance_tolerance=0.3)
+                reward, done, info= calculate_reward(next_state, state, distance_tolerance=0.5)
                 episode_reward += reward
 
                 # 存储经验
