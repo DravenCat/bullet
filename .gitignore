@@ -5,4 +5,4 @@
 /log
 ./models/*
 ./log/*
-./self_test.py
+/self_test.py
