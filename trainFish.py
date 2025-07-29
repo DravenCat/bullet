@@ -74,22 +74,24 @@ def get_state(robot_id, p, target_pos):
 
 
 # 计算奖励 (考虑目标位置)
-def calculate_reward(state, prev_state, distance_tolerance=0.5, float_epsilon=1e-5):
+def calculate_reward(state, prev_state, step_count, distance_tolerance=0.5, float_epsilon=1e-5):
     # 距离减少奖励：鼓励向目标移动
     if prev_state is not None:
         # distance_reward = (prev_state[10] - state[10]) * 20  # 距离减少的奖励
-        distance_reward = 10.0
-        if prev_state[10] > state[10] + float_epsilon:
-            if prev_state[7] > state[7] + float_epsilon:
-               distance_reward += 10.0
-            if prev_state[8] > state[8] + float_epsilon:
-                distance_reward += 10.0
-            if prev_state[9] > state[9] + float_epsilon:
-                distance_reward += 10.0
-        elif state[10] > prev_state[10] + float_epsilon:
-            distance_reward = 0.0
+        distance_reward = 0.0
+        # if prev_state[10] > state[10] + float_epsilon:
+        if abs(prev_state[7]) > abs(state[7]) + float_epsilon:
+            distance_reward += 10.0
+        if abs(prev_state[8]) > abs(state[8]) + float_epsilon:
+            distance_reward += 10.0
+        if abs(prev_state[9]) > abs(state[9]) + float_epsilon:
+            distance_reward += 10.0
+        # elif state[10] > prev_state[10] + float_epsilon:
+        #     distance_reward = -10.0
+        if abs(distance_reward) < float_epsilon:
+            distance_reward = -10.0
     else:
-        distance_reward = 0
+        distance_reward = 0.0
 
     # 方向对齐奖励：鼓励面向目标
     target_direction = math.atan2(state[9], state[8])  # atan2(dy, dx)
@@ -105,7 +107,10 @@ def calculate_reward(state, prev_state, distance_tolerance=0.5, float_epsilon=1e
     stability_reward = - (abs(state[4]) + abs(state[5])) * 1  # roll + pitch
 
     # 总奖励
+    # Time penalty
+    time_penalty = 1 / ((step_count + 50) // 50)
     total_reward = distance_reward + direction_reward + stability_reward
+    total_reward = total_reward * time_penalty
 
     # 终止条件：到达目标或姿态失控
     info = "fail"

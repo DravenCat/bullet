@@ -307,7 +307,7 @@ def main():
                 next_state = get_state(robot_id, p, target_pos)
 
                 # 计算奖励
-                reward, done, info= calculate_reward(next_state, state, distance_tolerance=0.5)
+                reward, done, info= calculate_reward(next_state, state, step, distance_tolerance=0.5)
                 episode_reward += reward
 
                 # 存储经验
@@ -425,7 +425,7 @@ def main():
 
             # 获取新状态
             next_state = get_state(robot_id, p, target_pos)
-            reward, done, info = calculate_reward(next_state, state, distance_tolerance=0.3)  # More distance tolerance in presentation
+            reward, done, info = calculate_reward(next_state, state, step_i, distance_tolerance=0.3)  # More distance tolerance in presentation
 
             # 更新状态
             state = next_state
